@@ -259,7 +259,7 @@ footer{color:var(--muted);font-size:.82rem;padding:0 0 30px}
 <!-- ================= BANDIT ================= -->
 <section class="panel" id="bandit" role="tabpanel">
   <h2>3a · Reinforcement learning: testing a new ad campaign</h2>
-  <p class="lede">Each week the team runs either a <b>proven campaign</b> (known odds) or a <b>new campaign</b> that is either good or bad — nobody knows which. The state is the <b>belief</b> \(\phi\) = P(new campaign is good). Bayes' rule updates it; the Bellman equation decides when to experiment. Defaults are Paarsch's numbers (§7.35).</p>
+  <p class="lede">Each week the team runs either a <b>proven campaign</b> (known odds) or a <b>new campaign</b> that is either good or bad — nobody knows which. The state is the <b>belief</b> \(\phi\) = P(new campaign is good). Bayes' rule updates it; the Bellman equation decides when to experiment.</p>
   <div class="grid">
     <div class="inputs">
       <h3>Plug in numbers</h3>
@@ -280,7 +280,7 @@ footer{color:var(--muted);font-size:.82rem;padding:0 0 30px}
       <div class="stats" id="banditStats"></div>
       <div id="banditWarn" class="warn"></div>
       <div class="charts">
-        <div class="chartbox"><h4>Value functions (compare Paarsch Fig. 7.41)</h4><div class="cv"><canvas id="bChart1" aria-label="Value functions"></canvas></div></div>
+        <div class="chartbox"><h4>Value functions</h4><div class="cv"><canvas id="bChart1" aria-label="Value functions"></canvas></div></div>
         <div class="chartbox"><h4>Zoom: when to experiment</h4><div class="cv"><canvas id="bChart2" aria-label="Switch point zoom"></canvas></div><p class="cap">Optimal switch = where the new-campaign value overtakes the proven one. Myopic switch = where <i>this week's</i> payoff alone overtakes it.</p></div>
       </div>
       <h3>One simulated team, week by week</h3>
@@ -334,7 +334,7 @@ footer{color:var(--muted);font-size:.82rem;padding:0 0 30px}
   </ul>
 </section>
 
-<footer>Everything is computed in your browser. Random results (simulations, Q-learning) differ slightly from the Python handout because the random draws differ; the optimal rules match. Sources: Paarsch, <i>The Foundations of Empirical Intuition</i> §7.35; Kappen, “Stochastic optimal control theory” (2008).</footer>
+<footer>Everything is computed in your browser. Results that use random draws (simulations, Q-learning) change slightly with the random seed.</footer>
 </div>
 
 <script id="model">
