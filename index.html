@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisions Over Time</title>
+<meta name="description" content="Interactive demos of deterministic optimal control, stochastic optimal control and reinforcement learning, with business examples.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f6f6f3; --surface:#ffffff; --surface-2:#f0efeb; --border:#e2e1dc;
+  --text:#16181d; --text-2:#52514e; --muted:#7c7b76;
+  --accent:#1f4e8c; --accent-soft:#e6eef9;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#8a8985;
+  --good:#1baf7a; --bad:#e34948;
+  --key-bg:#eef4fc; --key-border:#2a78d6;
+  --idea-bg:#fdf2ec; --idea-border:#eb6834;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121311; --surface:#1a1a19; --surface-2:#232321; --border:#33332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8e86;
+    --accent:#8fb6ee; --accent-soft:#1e2a3b;
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#8f8e86;
+    --key-bg:#18222f; --key-border:#3987e5;
+    --idea-bg:#2a1d16; --idea-border:#d95926;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121311; --surface:#1a1a19; --surface-2:#232321; --border:#33332f;
+  --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8e86;
+  --accent:#8fb6ee; --accent-soft:#1e2a3b;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#8f8e86;
+  --key-bg:#18222f; --key-border:#3987e5;
+  --idea-bg:#2a1d16; --idea-border:#d95926;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+header{padding:28px 0 14px}
+header h1{margin:0;font-size:clamp(1.5rem,3.5vw,2.1rem);letter-spacing:-.01em}
+header p{margin:4px 0 0;color:var(--text-2)}
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:6px 0 0;border-bottom:1px solid var(--border);scrollbar-width:thin}
+nav.tabs button{flex:0 0 auto;font:inherit;font-size:.95rem;padding:9px 14px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;background:none;color:var(--text-2);cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--text);border-color:var(--border);font-weight:600;margin-bottom:-1px}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabnum{display:inline-block;margin-right:.35em;color:var(--muted);font-weight:600}
+section.panel{display:none;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:22px 20px 28px;margin-bottom:40px}
+section.panel.active{display:block}
+h2{margin:0 0 4px;font-size:1.35rem}
+h3{margin:22px 0 8px;font-size:1.05rem}
+.lede{color:var(--text-2);margin:0 0 16px;max-width:75ch}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.grid>*{min-width:0}
+.scrollx{overflow-x:auto}
+.inputs{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.inputs h3{margin:0 0 10px}
+.field{display:grid;grid-template-columns:1fr 104px;gap:8px;align-items:center;margin:0 0 9px}
+.field label{font-size:.9rem;color:var(--text-2);line-height:1.25}
+.field label small{display:block;color:var(--muted);font-size:.78rem}
+.field input,.field select{width:100%;font:inherit;font-size:.95rem;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)}
+.field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:0}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button.btn{font:inherit;font-size:.9rem;padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button.btn:disabled{opacity:.55;cursor:default}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.stat .k{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.stat .v{font-size:1.35rem;font-weight:650;font-variant-numeric:tabular-nums}
+.stat .s{font-size:.8rem;color:var(--text-2)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.charts{grid-template-columns:1fr}}
+.chartbox{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 10px 6px}
+.chartbox h4{margin:0 0 4px;font-size:.92rem}
+.chartbox .cv{position:relative;height:240px}
+.chartbox p.cap{margin:4px 2px 2px;font-size:.8rem;color:var(--muted)}
+.box{border-radius:var(--radius);padding:12px 16px;margin:14px 0;border:1.5px solid}
+.box.key{background:var(--key-bg);border-color:var(--key-border)}
+.box.idea{background:var(--idea-bg);border-color:var(--idea-border)}
+.box .t{font-weight:700;font-size:.9rem;margin-bottom:4px}
+.box .katex-display{margin:.5em 0;overflow-x:auto;overflow-y:hidden;padding:2px 0}
+table.data{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+table.data th,table.data td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:right}
+table.data th:first-child,table.data td:first-child{text-align:left}
+table.data th{color:var(--text-2);font-weight:600;font-size:.82rem}
+.tablewrap{overflow-x:auto;max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
+.tablewrap thead th{position:sticky;top:0;background:var(--surface)}
+ul.try{margin:6px 0 0;padding-left:20px}
+ul.try li{margin:3px 0}
+.path{display:flex;flex-wrap:wrap;gap:3px;margin:6px 0}
+.chip{width:26px;height:26px;border-radius:5px;display:grid;place-items:center;font-size:.78rem;font-weight:700;color:#fff}
+.chip.S{background:var(--c3)} .chip.F{background:var(--c2)} .chip.one{background:var(--c4)}
+.legendrow{font-size:.82rem;color:var(--text-2);display:flex;gap:14px;flex-wrap:wrap}
+.legendrow span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--sw)}
+.progress{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-top:10px;border:1px solid var(--border)}
+.progress div{height:100%;width:0;background:var(--c1);transition:width .1s}
+.warn{color:var(--bad);font-size:.88rem;margin:6px 0}
+.note{font-size:.85rem;color:var(--muted)}
+.ladder{width:100%;border-collapse:collapse;font-size:.92rem;margin:8px 0 6px}
+.ladder th,.ladder td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+.ladder th{color:var(--text-2);font-size:.82rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:14px}
+.card{border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--surface-2);cursor:pointer;text-align:left;font:inherit;color:inherit}
+.card:hover{border-color:var(--accent)}
+.card b{display:block;margin-bottom:4px}
+.card span{font-size:.88rem;color:var(--text-2)}
+footer{color:var(--muted);font-size:.82rem;padding:0 0 30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Making the Best Decisions Over Time</h1>
+  <p>Deterministic control, stochastic control and reinforcement learning — plug in numbers and watch the optimal decision change. QMB 6875.</p>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Topics">
+  <button role="tab" aria-selected="true" data-tab="overview"><span class="tabnum">0</span>Overview</button>
+  <button role="tab" aria-selected="false" data-tab="feed"><span class="tabnum">1</span>Feedlot</button>
+  <button role="tab" aria-selected="false" data-tab="inv"><span class="tabnum">2</span>Inventory</button>
+  <button role="tab" aria-selected="false" data-tab="bandit"><span class="tabnum">3a</span>Ad campaign test</button>
+  <button role="tab" aria-selected="false" data-tab="q"><span class="tabnum">3b</span>Q-learning</button>
+</nav>
+
+<!-- ================= OVERVIEW ================= -->
+<section class="panel active" id="overview" role="tabpanel">
+  <h2>The big picture</h2>
+  <div class="box key"><div class="t">The whole topic in one sentence</div>
+    Optimal control is optimization where the thing you choose is a <b>plan over time</b>, and every decision changes the situation for the next one.</div>
+
+  <div class="scrollx"><table class="ladder" style="min-width:560px">
+    <thead><tr><th>Topic</th><th>What you know</th><th>What you choose</th><th>Demo on this page</th></tr></thead>
+    <tbody>
+      <tr><td><b>1. Deterministic control</b></td><td>Exactly how the world responds</td><td>The best <i>path</i> of actions</td><td>How much to feed a steer each week before sale</td></tr>
+      <tr><td><b>2. Stochastic control</b></td><td>The odds (demand is random)</td><td>The best <i>rule</i>: “in state \(x\), do \(u\)”</td><td>How much stock to order when demand is random</td></tr>
+      <tr><td><b>3. Reinforcement learning</b></td><td>Not even the odds</td><td>Actions that earn now <i>and</i> teach you</td><td>A/B testing an ad campaign; learning to order from sales data</td></tr>
+      <tr><td><b>4. On a computer</b></td><td colspan="3">Every tab solves its problem live in your browser with the same loop: try every choice in every state, keep the best.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="box key"><div class="t">The Bellman equation — the formula behind every tab</div>
+  $$V_t(x)=\max_{u}\Big[\underbrace{R(x,u)}_{\text{payoff today}}+\delta\,\underbrace{\mathbb{E}\,V_{t+1}(\text{next state})}_{\text{best you can do from tomorrow}}\Big]$$
+  The best total from here = the best choice of (today's payoff + the best total from wherever today's choice lands you).</div>
+
+  <h3>Vocabulary</h3>
+  <table class="ladder">
+    <tbody>
+      <tr><td><b>State</b> \(x\)</td><td>Where you are now: the animal's weight, units on the shelf, your belief about a campaign.</td></tr>
+      <tr><td><b>Control</b> \(u\)</td><td>What you decide now: feed, units to order, which campaign to run.</td></tr>
+      <tr><td><b>Objective</b></td><td>The scorecard you maximize (profit) or minimize (loss = −profit).</td></tr>
+      <tr><td><b>Discount factor</b> \(\delta\)</td><td>A dollar next period is worth \(\delta&lt;1\) dollars today (\(\delta = e^{-r}\)).</td></tr>
+      <tr><td><b>Policy</b></td><td>A rule giving the best decision for every possible state.</td></tr>
+      <tr><td><b>Value function</b> \(V(x)\)</td><td>The best total you can still earn starting from state \(x\).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Start a demo</h3>
+  <div class="cards">
+    <button class="card" data-go="feed"><b>1 · Feedlot</b><span>Deterministic control. Feed now, sell later — work backwards from the sale date.</span></button>
+    <button class="card" data-go="inv"><b>2 · Inventory</b><span>Stochastic control. Random demand creates safety stock.</span></button>
+    <button class="card" data-go="bandit"><b>3a · Ad campaign test</b><span>Learning while earning. Bayes' rule + Bellman; information has value.</span></button>
+    <button class="card" data-go="q"><b>3b · Q-learning</b><span>Learn the ordering rule from experience, with no model at all.</span></button>
+  </div>
+</section>
+
+<!-- ================= FEEDLOT ================= -->
+<section class="panel" id="feed" role="tabpanel">
+  <h2>1 · Deterministic control: how much to feed a steer</h2>
+  <p class="lede">A feedlot buys a steer and sells it after \(T\) weeks. More feed means a heavier animal and more revenue at sale — but feed costs money now. The computer works <b>backwards</b> from the sale date to find the best feed every week.</p>
+  <div class="grid">
+    <div class="inputs" id="feedInputs">
+      <h3>Plug in numbers</h3>
+      <div class="field"><label for="f_T">Weeks until sale <small>\(T\)</small></label><input id="f_T" type="number" min="2" max="52" step="1" value="20"></div>
+      <div class="field"><label for="f_w0">Starting weight <small>lb</small></label><input id="f_w0" type="number" min="200" max="1500" step="10" value="750"></div>
+      <div class="field"><label for="f_p">Sale price <small>$ per lb, \(p\)</small></label><input id="f_p" type="number" min="0.1" step="0.05" value="2.00"></div>
+      <div class="field"><label for="f_c">Feed price <small>$ per lb, \(c\)</small></label><input id="f_c" type="number" min="0.01" step="0.01" value="0.15"></div>
+      <div class="field"><label for="f_a">Growth efficiency <small>\(a\)</small></label><input id="f_a" type="number" min="0.1" step="0.1" value="1.8"></div>
+      <div class="field"><label for="f_d">Weekly discount factor <small>\(\delta\); 0.998 ≈ 10% a year</small></label><input id="f_d" type="number" min="0.9" max="1" step="0.001" value="0.998"></div>
+      <div class="field"><label for="f_model">Growth model</label>
+        <select id="f_model"><option value="A">A: a√f (feed only)</option><option value="B">B: slows with weight</option></select></div>
+      <div class="field" id="f_WmaxRow"><label for="f_Wmax">Weight where growth stops <small>Model B, lb</small></label><input id="f_Wmax" type="number" min="300" step="50" value="1800"></div>
+      <div class="btnrow"><button class="btn" data-reset="feed">Reset defaults</button></div>
+    </div>
+    <div>
+      <div class="stats" id="feedStats"></div>
+      <div id="feedWarn" class="warn"></div>
+      <div class="charts">
+        <div class="chartbox"><h4>Optimal feed each week</h4><div class="cv"><canvas id="feedChart1" aria-label="Optimal feed by week"></canvas></div></div>
+        <div class="chartbox"><h4>Resulting weight</h4><div class="cv"><canvas id="feedChart2" aria-label="Weight by week"></canvas></div></div>
+      </div>
+      <h3>Week by week</h3>
+      <div class="tablewrap"><table class="data" id="feedTable"></table></div>
+    </div>
+  </div>
+
+  <div class="box key"><div class="t">The problem (from class)</div>
+  $$\dot w = h(w,f)\qquad\quad \max_{f(\cdot)}\; e^{-rT}\,p\,w(T)\;-\;c\int_0^T f(t)\,e^{-rt}\,dt$$
+  \(\dot w\) = how fast weight changes; \(h\) = the growth rule. Profit = discounted sale revenue − discounted feed bill.</div>
+  <div class="box key"><div class="t">Closed-form answer for Model A (\(h=a\sqrt f\)) — the code checks against it</div>
+  $$f^*_t=\Big(\frac{a\,p}{2c}\Big)^2\,\delta^{\,2(T-t)}$$
+  Model B has no formula — only the computer can solve it.</div>
+  <h3>Try this</h3>
+  <ul class="try">
+    <li>Double the feed price \(c\) to 0.30. Feed should drop to about <b>a quarter</b> — the formula has \(c^2\) underneath.</li>
+    <li>Lower δ to 0.99 (about 52% a year). Feed now rises more steeply toward the sale date: early feed ties up money longer.</li>
+    <li>Switch to Model B. Feeding a heavy animal pays less, so the plan feeds much less.</li>
+  </ul>
+</section>
+
+<!-- ================= INVENTORY ================= -->
+<section class="panel" id="inv" role="tabpanel">
+  <h2>2 · Stochastic control: how much stock to order</h2>
+  <p class="lede">A store orders stock every week, then a <b>random</b> number of customers arrive (Poisson). Unsold units stay on the shelf. The computer compares the best rule under random demand with the rule a manager would use if demand were always exactly average.</p>
+  <div class="grid">
+    <div class="inputs">
+      <h3>Plug in numbers</h3>
+      <div class="field"><label for="i_price">Selling price <small>$ per unit</small></label><input id="i_price" type="number" min="0.1" step="0.5" value="12"></div>
+      <div class="field"><label for="i_cost">Purchase cost <small>$ per unit</small></label><input id="i_cost" type="number" min="0" step="0.5" value="5"></div>
+      <div class="field"><label for="i_hold">Holding cost <small>$ per unit per week</small></label><input id="i_hold" type="number" min="0" step="0.1" value="0.5"></div>
+      <div class="field"><label for="i_mean">Average weekly demand <small>Poisson mean</small></label><input id="i_mean" type="number" min="1" max="40" step="1" value="10"></div>
+      <div class="field"><label for="i_cap">Shelf space <small>max units</small></label><input id="i_cap" type="number" min="5" max="100" step="1" value="30"></div>
+      <div class="field"><label for="i_delta">Weekly discount factor <small>\(\delta\)</small></label><input id="i_delta" type="number" min="0.5" max="0.999" step="0.01" value="0.95"></div>
+      <div class="btnrow"><button class="btn" data-reset="inv">Reset defaults</button></div>
+    </div>
+    <div>
+      <div class="stats" id="invStats"></div>
+      <div id="invWarn" class="warn"></div>
+      <div class="charts">
+        <div class="chartbox"><h4>Weekly demand distribution</h4><div class="cv"><canvas id="invChart1" aria-label="Demand distribution"></canvas></div><p class="cap" id="invCap1"></p></div>
+        <div class="chartbox"><h4>Optimal ordering rule</h4><div class="cv"><canvas id="invChart2" aria-label="Ordering rule"></canvas></div></div>
+      </div>
+      <h3>Test both rules on 5,000 simulated years</h3>
+      <div class="tablewrap" style="max-height:none"><table class="data" id="invSimTable"></table></div>
+      <h3>The full ordering rule</h3>
+      <div class="tablewrap"><table class="data" id="invTable"></table></div>
+    </div>
+  </div>
+  <div class="box key"><div class="t">The stochastic Bellman equation for the store</div>
+  $$V(x)=\max_{y\ge x}\;\mathbb{E}_D\Big[\,p\min(y,D)-c\,(y-x)-h\,x'+\delta\,V(x')\Big],\qquad x'=y-\min(y,D)$$
+  \(x\) = units on hand, \(y\) = order up to, \(D\sim\text{Poisson}\). The only change from Topic 1: <b>average over the randomness</b>.</div>
+  <div class="box idea"><div class="t">Rule of thumb that explains the safety stock</div>
+  $$F_D(S)\;\ge\;\frac{\text{margin lost per unit short}}{\text{margin lost}+\text{cost per unit over}}=\frac{p-c}{(p-c)+h+(1-\delta)c}$$
+  Running out costs a lot more than holding one extra unit, so stock into the right tail of demand.</div>
+  <h3>Try this</h3>
+  <ul class="try">
+    <li>Raise the holding cost to 3. Storage is now expensive, so the safety stock shrinks.</li>
+    <li>Raise the selling price to 30. Running out hurts more, so the safety stock grows.</li>
+    <li>Change average demand to 20. Does the buffer stay at 4 units, or grow? (Poisson spread grows like \(\sqrt{\text{mean}}\).)</li>
+  </ul>
+</section>
+
+<!-- ================= BANDIT ================= -->
+<section class="panel" id="bandit" role="tabpanel">
+  <h2>3a · Reinforcement learning: testing a new ad campaign</h2>
+  <p class="lede">Each week the team runs either a <b>proven campaign</b> (known odds) or a <b>new campaign</b> that is either good or bad — nobody knows which. The state is the <b>belief</b> \(\phi\) = P(new campaign is good). Bayes' rule updates it; the Bellman equation decides when to experiment. Defaults are Paarsch's numbers (§7.35).</p>
+  <div class="grid">
+    <div class="inputs">
+      <h3>Plug in numbers</h3>
+      <div class="field"><label for="b_a1">Proven: P(win) <small>\(\alpha_1\)</small></label><input id="b_a1" type="number" min="0" max="1" step="0.05" value="0.25"></div>
+      <div class="field"><label for="b_yh1">Proven: win payoff <small>$</small></label><input id="b_yh1" type="number" step="10" value="50"></div>
+      <div class="field"><label for="b_yl1">Proven: flop payoff <small>$</small></label><input id="b_yl1" type="number" step="10" value="-50"></div>
+      <div class="field"><label for="b_a2">New, if good: P(win) <small>\(\alpha_2\)</small></label><input id="b_a2" type="number" min="0" max="1" step="0.05" value="0.50"></div>
+      <div class="field"><label for="b_b2">New, if bad: P(win) <small>\(\beta_2\)</small></label><input id="b_b2" type="number" min="0" max="1" step="0.01" value="0.05"></div>
+      <div class="field"><label for="b_yh2">New: win payoff <small>$</small></label><input id="b_yh2" type="number" step="10" value="200"></div>
+      <div class="field"><label for="b_yl2">New: flop payoff <small>$</small></label><input id="b_yl2" type="number" step="10" value="-50"></div>
+      <div class="field"><label for="b_delta">Discount factor <small>\(\delta\)</small></label><input id="b_delta" type="number" min="0" max="0.995" step="0.05" value="0.95"></div>
+      <h3 style="margin-top:16px">Simulate a team</h3>
+      <div class="field"><label for="b_phi0">Starting belief <small>\(\phi_0\)</small></label><input id="b_phi0" type="number" min="0" max="1" step="0.05" value="0.10"></div>
+      <div class="field"><label for="b_truth">New campaign is truly</label><select id="b_truth"><option value="good">good</option><option value="bad">bad</option></select></div>
+      <div class="btnrow"><button class="btn primary" id="b_rerun">Run 30 weeks again</button><button class="btn" data-reset="bandit">Reset defaults</button></div>
+    </div>
+    <div>
+      <div class="stats" id="banditStats"></div>
+      <div id="banditWarn" class="warn"></div>
+      <div class="charts">
+        <div class="chartbox"><h4>Value functions (compare Paarsch Fig. 7.41)</h4><div class="cv"><canvas id="bChart1" aria-label="Value functions"></canvas></div></div>
+        <div class="chartbox"><h4>Zoom: when to experiment</h4><div class="cv"><canvas id="bChart2" aria-label="Switch point zoom"></canvas></div><p class="cap">Optimal switch = where the new-campaign value overtakes the proven one. Myopic switch = where <i>this week's</i> payoff alone overtakes it.</p></div>
+      </div>
+      <h3>One simulated team, week by week</h3>
+      <div class="legendrow"><span style="--sw:var(--c3)">S = new campaign won</span><span style="--sw:var(--c2)">F = new campaign flopped</span><span style="--sw:var(--c4)">1 = back to proven campaign</span></div>
+      <div class="path" id="bPath"></div>
+      <div class="chartbox"><h4>Belief that the new campaign is good</h4><div class="cv" style="height:200px"><canvas id="bChart3" aria-label="Belief over time"></canvas></div></div>
+    </div>
+  </div>
+  <div class="box key"><div class="t">Learning step: Bayes' rule</div>
+  $$\phi_{\text{win}}=\frac{\phi\,\alpha_2}{\phi\,\alpha_2+(1-\phi)\,\beta_2}\qquad\qquad \phi_{\text{flop}}=\frac{\phi\,(1-\alpha_2)}{\phi\,(1-\alpha_2)+(1-\phi)(1-\beta_2)}$$</div>
+  <div class="box key"><div class="t">Control step: Bellman with a belief as the state</div>
+  $$V^*(\phi)=\max\Big\{\underbrace{(1-\delta)\,r_1+\delta V^*(\phi)}_{\text{proven: belief unchanged}},\;\underbrace{(1-\delta)\,r_2(\phi)+\delta\big[P_{\text{win}}V^*(\phi_{\text{win}})+P_{\text{flop}}V^*(\phi_{\text{flop}})\big]}_{\text{new: earn and learn}}\Big\}$$</div>
+  <h3>Try this</h3>
+  <ul class="try">
+    <li>Lower \(\delta\) to 0.5. The future matters less, so learning is worth less: the optimal switch moves toward the myopic one.</li>
+    <li>Raise \(\delta\) to 0.99. A patient team experiments even at tiny beliefs.</li>
+    <li>Set the truth to "bad" and rerun a few times. How many weeks until the team gives up? Once it stops, it never returns — the proven campaign teaches nothing new.</li>
+  </ul>
+</section>
+
+<!-- ================= Q-LEARNING ================= -->
+<section class="panel" id="q" role="tabpanel">
+  <h2>3b · Reinforcement learning: Q-learning the ordering rule</h2>
+  <p class="lede">The same store as tab 2 — but now nobody knows demand is Poisson. The learner only sees each week's profit and leftover stock, and nudges a table \(Q(x,y)\) toward what actually happened. Business numbers come from the <b>Inventory tab</b>.</p>
+  <div class="grid">
+    <div class="inputs">
+      <h3>Learning settings</h3>
+      <div class="field"><label for="q_steps">Weeks of experience</label><select id="q_steps"><option value="100000">100k</option><option value="300000">300k</option><option value="1000000">1 million</option><option value="3000000" selected>3 million</option></select></div>
+      <div class="field"><label for="q_eps">Exploration rate <small>\(\varepsilon\): share of random tries</small></label><input id="q_eps" type="number" min="0" max="1" step="0.05" value="0.10"></div>
+      <div class="field"><label for="q_expo">Step-size decay <small>\(\alpha = 1/n^{k}\), \(k\)</small></label><input id="q_expo" type="number" min="0.51" max="1" step="0.05" value="0.7"></div>
+      <div class="field"><label for="q_seed">Random seed</label><input id="q_seed" type="number" min="0" step="1" value="0"></div>
+      <p class="note" id="qParams"></p>
+      <div class="btnrow"><button class="btn primary" id="q_run">Run Q-learning</button><button class="btn" data-reset="q">Reset defaults</button></div>
+      <div class="progress" aria-hidden="true"><div id="qProg"></div></div>
+    </div>
+    <div>
+      <div class="stats" id="qStats"><div class="stat"><div class="k">Status</div><div class="v" style="font-size:1rem">Press “Run Q-learning”</div></div></div>
+      <div class="chartbox"><h4>Average weekly profit while learning</h4><div class="cv"><canvas id="qChart1" aria-label="Learning curve"></canvas></div><p class="cap">Stays a little below the optimum while learning because the learner keeps exploring.</p></div>
+      <h3>Learned rule vs. the DP rule</h3>
+      <div class="tablewrap"><table class="data" id="qTable"></table></div>
+    </div>
+  </div>
+  <div class="box key"><div class="t">The Q-learning update</div>
+  $$Q(x,y)\;\leftarrow\;Q(x,y)+\alpha\Big[\underbrace{r+\delta\max_{y'}Q(x',y')}_{\text{what just happened + best guess of the future}}-Q(x,y)\Big]$$
+  The Bellman equation with the expectation replaced by <b>one real outcome at a time</b>.</div>
+  <h3>Try this</h3>
+  <ul class="try">
+    <li>Set exploration to 0. The learner locks onto its first guesses and can end with a worse rule.</li>
+    <li>Use only 100,000 weeks. The rule is rougher — the price of not knowing the model is data.</li>
+    <li>Look at the "% of weeks" column: the rule is accurate where the store spends time and rough where it rarely goes.</li>
+  </ul>
+</section>
+
+<footer>Everything is computed in your browser. Random results (simulations, Q-learning) differ slightly from the Python handout because the random draws differ; the optimal rules match. Sources: Paarsch, <i>The Foundations of Empirical Intuition</i> §7.35; Kappen, “Stochastic optimal control theory” (2008).</footer>
+</div>
+
+<script id="model">
+/* ===================== MATH (no UI) ===================== */
+const M = {};
+M.rng = function(seed){ let a = (seed >>> 0) + 0x9E3779B9; return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+M.poissonDraw = function(rng, lam){ const L = Math.exp(-lam); let k = 0, p = 1; do { k++; p *= rng(); } while (p > L); return k - 1; };
+M.poissonPmf = function(lam, cap){ const pd = new Float64Array(cap + 1); let p = Math.exp(-lam), s = 0; for (let d = 0; d < cap; d++){ pd[d] = p; s += p; p *= lam / (d + 1); } pd[cap] = Math.max(0, 1 - s); return pd; };
+M.poissonCdf = function(lam, k){ let p = Math.exp(-lam), s = 0; for (let d = 0; d <= k; d++){ s += p; p *= lam / (d + 1); } return s; };
+
+/* ---- Topic 1: feedlot, backward DP on a weight grid ---- */
+M.solveFeed = function(P){
+  const delta = P.delta;
+  const fstar = Math.pow(P.a * P.p / (2 * P.c), 2);
+  const Fmax = Math.min(50000, Math.max(50, Math.ceil(fstar * 1.6 / 10) * 10));
+  const nF = 401, df = Fmax / (nF - 1);
+  const sf = new Float64Array(nF); for (let j = 0; j < nF; j++) sf[j] = Math.sqrt(j * df);
+  const B = P.model === "B";
+  const wLo = P.w0 - 10;
+  const wHi = B ? Math.max(P.Wmax, P.w0) + 10 : P.w0 + P.T * P.a * Math.sqrt(Fmax) + 10;
+  const nW = 1601, dw = (wHi - wLo) / (nW - 1);
+  const W = new Float64Array(nW); for (let i = 0; i < nW; i++) W[i] = wLo + i * dw;
+  const fac = w => B ? Math.max(0, P.Wmax - w) / (P.Wmax - P.w0) : 1;
+  const interp = (arr, w) => { let pos = (w - wLo) / dw; if (pos <= 0) return arr[0]; if (pos >= nW - 1) return arr[nW - 1]; const k = Math.floor(pos), t = pos - k; return arr[k] * (1 - t) + arr[k + 1] * t; };
+  let V = new Float64Array(nW); for (let i = 0; i < nW; i++) V[i] = P.p * W[i];
+  const policy = new Array(P.T);
+  for (let t = P.T - 1; t >= 0; t--){                     // work BACKWARDS
+    const Vn = new Float64Array(nW), pol = new Float64Array(nW);
+    for (let i = 0; i < nW; i++){
+      const g = P.a * fac(W[i]); let best = -Infinity, bf = 0;
+      for (let j = 0; j < nF; j++){                       // try every feed amount
+        const v = -P.c * j * df + delta * interp(V, W[i] + g * sf[j]);
+        if (v > best){ best = v; bf = j * df; }
+      }
+      Vn[i] = best; pol[i] = bf;
+    }
+    V = Vn; policy[t] = pol;
+  }
+  const feed = [], weight = [P.w0]; let w = P.w0;           // run the plan forward
+  for (let t = 0; t < P.T; t++){ const f = interp(policy[t], w); feed.push(f); w = w + P.a * fac(w) * Math.sqrt(f); weight.push(w); }
+  const formula = B ? null : feed.map((_, t) => fstar * Math.pow(delta, 2 * (P.T - t)));
+  const hitCap = feed.some(f => f >= Fmax - 1e-9);
+  return { feed, weight, formula, profit: interp(V, P.w0), delta, hitCap };
+};
+
+/* ---- Topic 2: inventory, value iteration ---- */
+M.solveInventory = function(P, probs){
+  const cap = P.cap; let V = new Float64Array(cap + 1); const A = new Float64Array(cap + 1);
+  let S = new Int32Array(cap + 1), it = 0, conv = false;
+  for (it = 0; it < 20000; it++){
+    for (let y = 0; y <= cap; y++){                       // E[...] for each order-up-to level
+      let e = 0; for (let d = 0; d <= cap; d++){ if (probs[d] === 0) continue; const sales = Math.min(y, d), left = y - sales; e += probs[d] * (P.price * sales - P.hold * left + P.delta * V[left]); }
+      A[y] = e;
+    }
+    const Vn = new Float64Array(cap + 1); let diff = 0;
+    for (let s = 0; s <= cap; s++){                       // Bellman: best y >= s
+      let best = -Infinity, by = s; for (let y = s; y <= cap; y++){ const v = A[y] - P.cost * (y - s); if (v > best + 1e-12){ best = v; by = y; } }
+      Vn[s] = best; S[s] = by; diff = Math.max(diff, Math.abs(best - V[s]));
+    }
+    V = Vn; if (diff < 1e-8){ conv = true; break; }
+  }
+  return { V, S, it, conv };
+};
+M.simulateInventory = function(P, rules, years, seed){
+  const rng = M.rng(seed), D = new Int32Array(years * 52);
+  for (let i = 0; i < D.length; i++) D[i] = M.poissonDraw(rng, P.mean);
+  let totalD = 0; for (let i = 0; i < D.length; i++) totalD += D[i];
+  return rules.map(rule => {
+    const prof = new Float64Array(years); let sold = 0;
+    for (let yr = 0; yr < years; yr++){
+      let stock = 0, pr = 0;
+      for (let t = 0; t < 52; t++){ const y = Math.max(rule(stock), stock); const dem = D[yr * 52 + t]; const sales = Math.min(y, dem); pr += P.price * sales - P.cost * (y - stock) - P.hold * (y - sales); sold += sales; stock = y - sales; }
+      prof[yr] = pr;
+    }
+    let m = 0; for (const v of prof) m += v; m /= years; let s2 = 0; for (const v of prof) s2 += (v - m) * (v - m);
+    return { mean: m, sd: Math.sqrt(s2 / years), fill: sold / totalD };
+  });
+};
+
+/* ---- Topic 3a: two-armed bandit ---- */
+M.solveBandit = function(P){
+  const N = 4001, phi = new Float64Array(N), r2 = new Float64Array(N), pw = new Float64Array(N), pS = new Float64Array(N), pF = new Float64Array(N);
+  const r1 = P.a1 * P.yh1 + (1 - P.a1) * P.yl1;
+  const mG = P.a2 * P.yh2 + (1 - P.a2) * P.yl2, mB = P.b2 * P.yh2 + (1 - P.b2) * P.yl2;
+  for (let i = 0; i < N; i++){
+    const f = i / (N - 1); phi[i] = f; r2[i] = f * mG + (1 - f) * mB; pw[i] = f * P.a2 + (1 - f) * P.b2;
+    pS[i] = pw[i] > 0 ? f * P.a2 / pw[i] : f;
+    const dF = f * (1 - P.a2) + (1 - f) * (1 - P.b2); pF[i] = dF > 0 ? f * (1 - P.a2) / dF : f;
+  }
+  const interp = (arr, x) => { const pos = x * (N - 1); if (pos <= 0) return arr[0]; if (pos >= N - 1) return arr[N - 1]; const k = Math.floor(pos), t = pos - k; return arr[k] * (1 - t) + arr[k + 1] * t; };
+  let V = new Float64Array(N), V1 = new Float64Array(N), V2 = new Float64Array(N), it, conv = false;
+  for (it = 0; it < 100000; it++){
+    let diff = 0; const Vn = new Float64Array(N);
+    for (let i = 0; i < N; i++){
+      V1[i] = (1 - P.delta) * r1 + P.delta * V[i];
+      V2[i] = (1 - P.delta) * r2[i] + P.delta * (pw[i] * interp(V, pS[i]) + (1 - pw[i]) * interp(V, pF[i]));
+      Vn[i] = Math.max(V1[i], V2[i]); diff = Math.max(diff, Math.abs(Vn[i] - V[i]));
+    }
+    V = Vn; if (diff < 1e-9){ conv = true; break; }
+  }
+  let sw = null, my = null;
+  for (let i = 0; i < N; i++){ if (sw === null && V2[i] >= V1[i]) sw = phi[i]; if (my === null && r2[i] >= r1) my = phi[i]; }
+  return { phi, V, V1, V2, r1, r2, switchAt: sw, myopicAt: my, it, conv, mG, mB };
+};
+M.banditPath = function(P, sw, phi0, truth, weeks, seed){
+  const rng = M.rng(seed); let b = phi0; const path = [], beliefs = [b];
+  for (let w = 0; w < weeks; w++){
+    if (sw === null || b < sw){ path.push("1"); beliefs.push(b); continue; }
+    const win = rng() < (truth === "good" ? P.a2 : P.b2);
+    b = win ? b * P.a2 / (b * P.a2 + (1 - b) * P.b2) : b * (1 - P.a2) / (b * (1 - P.a2) + (1 - b) * (1 - P.b2));
+    if (!isFinite(b)) b = 0;
+    path.push(win ? "S" : "F"); beliefs.push(b);
+  }
+  return { path, beliefs };
+};
+
+/* ---- Topic 3b: Q-learning (runs in chunks) ---- */
+M.qInit = function(P, opts){
+  const n = P.cap + 1, Q = new Float64Array(n * n), visits = new Float64Array(n * n);
+  for (let s = 0; s < n; s++) for (let y = 0; y < s; y++) Q[s * n + y] = -Infinity;   // y < s impossible
+  const block = Math.max(1, Math.floor(opts.steps / 500));
+  return { P, opts, n, Q, visits, stock: 0, step: 0, rng: M.rng(opts.seed), block, bsum: 0, bcount: 0, curve: [], stateVisits: new Float64Array(n) };
+};
+M.qRun = function(st, k){
+  const { P, opts, n, Q, visits, rng } = st; const end = Math.min(opts.steps, st.step + k);
+  for (; st.step < end; st.step++){
+    const s = st.stock; let y;
+    if (rng() < opts.eps) y = s + Math.floor(rng() * (n - s));          // explore
+    else { let best = -Infinity; y = s; for (let j = s; j < n; j++){ const q = Q[s * n + j]; if (q > best){ best = q; y = j; } } }  // exploit
+    const dem = M.poissonDraw(rng, P.mean), sales = Math.min(y, dem), nxt = y - sales;
+    const r = P.price * sales - P.cost * (y - s) - P.hold * nxt;
+    let mx = -Infinity; for (let j = nxt; j < n; j++){ const q = Q[nxt * n + j]; if (q > mx) mx = q; }
+    const idx = s * n + y; visits[idx] += 1; st.stateVisits[s] += 1;
+    const alpha = 1 / Math.pow(visits[idx], opts.expo);
+    Q[idx] += alpha * (r + P.delta * mx - Q[idx]);                       // Q-learning update
+    st.stock = nxt; st.bsum += r; st.bcount++;
+    if (st.bcount === st.block){ st.curve.push([st.step + 1, st.bsum / st.block]); st.bsum = 0; st.bcount = 0; }
+  }
+  return st.step >= opts.steps;
+};
+M.qPolicy = function(st){ const { n, Q } = st, S = new Int32Array(n); for (let s = 0; s < n; s++){ let best = -Infinity, by = s; for (let y = s; y < n; y++){ if (Q[s * n + y] > best){ best = Q[s * n + y]; by = y; } } S[s] = by; } return S; };
+if (typeof module !== "undefined") module.exports = M;
+</script>
+
+<script>
+/* ===================== UI ===================== */
+const $ = id => document.getElementById(id);
+const fmt$ = (v, d = 0) => (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtN = (v, d = 0) => v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const num = id => parseFloat($(id).value);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const stat = (k, v, s = "") => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ""}</div>`;
+const debounce = (fn, ms = 250) => { let t; return () => { clearTimeout(t); t = setTimeout(fn, ms); }; };
+
+/* ---- tabs ---- */
+const rendered = {};
+function showTab(name){
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"));
+  document.querySelectorAll("section.panel").forEach(p => p.classList.toggle("active", p.id === name));
+  try { history.replaceState(null, "", "#" + name); } catch (e) {}
+  if (!rendered[name]){ rendered[name] = true; ({ feed: runFeed, inv: runInv, bandit: runBandit, q: showQParams }[name] || (() => {}))(); }
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => { showTab(b.dataset.go); window.scrollTo({ top: 0, behavior: "smooth" }); }));
+
+/* ---- defaults & reset ---- */
+const defaults = {};
+document.querySelectorAll(".inputs input, .inputs select").forEach(el => defaults[el.id] = el.value);
+document.querySelectorAll("[data-reset]").forEach(b => b.addEventListener("click", () => {
+  const sec = b.closest("section");
+  sec.querySelectorAll(".inputs input, .inputs select").forEach(el => el.value = defaults[el.id]);
+  ({ feed: runFeed, inv: runInv, bandit: runBandit, q: showQParams })[b.dataset.reset]();
+}));
+
+/* ---- charts ---- */
+const charts = {};
+function chartBase(){
+  return {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "nearest", intersect: false },
+    plugins: { legend: { labels: { color: css("--text-2"), usePointStyle: true, pointStyle: "line", boxWidth: 18, font: { size: 11 } } },
+      tooltip: { backgroundColor: css("--surface"), titleColor: css("--text"), bodyColor: css("--text-2"), borderColor: css("--border"), borderWidth: 1 } },
+    scales: {}
+  };
+}
+function axis(title, extra = {}){ return Object.assign({ title: { display: true, text: title, color: css("--text-2"), font: { size: 11 } }, ticks: { color: css("--muted"), font: { size: 10 } }, grid: { color: css("--border") } }, extra); }
+function draw(id, config){
+  if (typeof Chart === "undefined"){ $(id).parentElement.innerHTML = '<p class="note">Chart library did not load (check your internet connection).</p>'; return; }
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart($(id), config);
+}
+const line = (label, data, color, extra = {}) => Object.assign({ label, data, borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 0, tension: 0 }, extra);
+
+/* ================= Tab 1: feedlot ================= */
+function runFeed(){
+  const P = { T: Math.round(num("f_T")), w0: num("f_w0"), p: num("f_p"), c: num("f_c"), a: num("f_a"), delta: num("f_d"), model: $("f_model").value, Wmax: num("f_Wmax") };
+  $("f_WmaxRow").style.display = P.model === "B" ? "" : "none";
+  const warn = [];
+  if (!(P.T >= 2 && P.T <= 52)) warn.push("Weeks must be between 2 and 52.");
+  if (!(P.p > 0 && P.c > 0 && P.a > 0 && P.w0 > 0)) warn.push("Price, feed cost, growth and weight must be positive.");
+  if (!(P.delta > 0.9 && P.delta <= 1)) warn.push("The weekly discount factor must be between 0.9 and 1.");
+  if (P.model === "B" && !(P.Wmax > P.w0)) warn.push("For Model B, the weight where growth stops must be above the starting weight.");
+  $("feedWarn").textContent = warn.join(" ");
+  if (warn.length) return;
+  const R = M.solveFeed(P);
+  const totalFeed = R.feed.reduce((s, v) => s + v, 0);
+  $("feedStats").innerHTML =
+    stat("Profit (present value)", fmt$(R.profit, 2), "sale value − feed costs") +
+    stat("Sale weight", fmtN(R.weight[P.T]) + " lb", "from " + fmtN(P.w0) + " lb") +
+    stat("Total feed", fmtN(totalFeed) + " lb", "cost " + fmt$(totalFeed * P.c)) +
+    stat("Implied interest rate", fmtN(-52 * Math.log(R.delta) * 100, 1) + "%", "per year, from δ = " + R.delta);
+  if (R.hitCap) $("feedWarn").textContent = "Note: feed hit the top of the search grid; results may be understated.";
+  const weeks = R.feed.map((_, i) => i + 1);
+  const ds = [line("Computer (Bellman)", R.feed, css("--c1"), { pointRadius: 2.5 })];
+  if (R.formula) ds.push(line("Formula", R.formula, css("--c2"), { borderDash: [6, 4] }));
+  const o1 = chartBase(); o1.scales = { x: axis("Week"), y: axis("Feed (lb per week)", { beginAtZero: true }) };
+  draw("feedChart1", { type: "line", data: { labels: weeks, datasets: ds }, options: o1 });
+  const o2 = chartBase(); o2.plugins.legend.display = false; o2.scales = { x: axis("Week"), y: axis("Weight (lb)") };
+  draw("feedChart2", { type: "line", data: { labels: R.weight.map((_, i) => i), datasets: [line("Weight", R.weight, css("--c3"), { pointRadius: 2 })] }, options: o2 });
+  let h = `<thead><tr><th>Week</th><th>Feed (lb)</th>${R.formula ? "<th>Formula</th>" : ""}<th>Gain (lb)</th><th>End weight (lb)</th><th>Feed cost</th></tr></thead><tbody>`;
+  for (let t = 0; t < P.T; t++) h += `<tr><td>${t + 1}</td><td>${fmtN(R.feed[t], 1)}</td>${R.formula ? `<td>${fmtN(R.formula[t], 1)}</td>` : ""}<td>${fmtN(R.weight[t + 1] - R.weight[t], 1)}</td><td>${fmtN(R.weight[t + 1], 1)}</td><td>${fmt$(R.feed[t] * P.c, 2)}</td></tr>`;
+  $("feedTable").innerHTML = h + "</tbody>";
+}
+document.querySelectorAll("#feed .inputs input, #feed .inputs select").forEach(el => el.addEventListener("input", debounce(runFeed)));
+
+/* ================= Tab 2: inventory ================= */
+function invParams(){ return { price: num("i_price"), cost: num("i_cost"), hold: num("i_hold"), mean: num("i_mean"), cap: Math.round(num("i_cap")), delta: num("i_delta") }; }
+function invCheck(P){
+  const w = [];
+  if (!(P.price > 0 && P.cost >= 0 && P.hold >= 0)) w.push("Prices and costs must be non-negative.");
+  if (!(P.mean >= 1 && P.mean <= 40)) w.push("Average demand must be between 1 and 40.");
+  if (!(P.cap >= 5 && P.cap <= 100)) w.push("Shelf space must be between 5 and 100.");
+  if (!(P.delta > 0 && P.delta < 1)) w.push("The discount factor must be between 0 and 1.");
+  return w;
+}
+function runInv(){
+  const P = invParams(), warn = invCheck(P);
+  $("invWarn").textContent = warn.join(" ");
+  if (warn.length) return;
+  const pd = M.poissonPmf(P.mean, P.cap);
+  const det = new Float64Array(P.cap + 1); det[Math.min(P.cap, Math.round(P.mean))] = 1;
+  const R = M.solveInventory(P, pd), Rd = M.solveInventory(P, det);
+  const S0 = R.S[0], Sd = Rd.S[0];
+  const sim = M.simulateInventory(P, [s => Sd, s => S0], 5000, 1);
+  const cr = (P.price - P.cost) / ((P.price - P.cost) + P.hold + (1 - P.delta) * P.cost);
+  let Scr = 0; while (Scr < P.cap && M.poissonCdf(P.mean, Scr) < cr) Scr++;
+  const stockout = 1 - M.poissonCdf(P.mean, S0);
+  if (S0 >= P.cap) $("invWarn").textContent = "The best rule fills the whole shelf — try more shelf space.";
+  if (P.price <= P.cost) $("invWarn").textContent = "Selling price is at or below cost, so the best rule is to order nothing.";
+  $("invStats").innerHTML =
+    stat("Order up to (random demand)", S0, "DP rule") +
+    stat("Order up to (demand = average)", Sd, "naive rule") +
+    stat("Safety stock", (S0 - Sd) + (Math.abs(S0 - Sd) === 1 ? " unit" : " units"), "rule of thumb says " + Scr) +
+    stat("Extra profit per year", fmt$(sim[1].mean - sim[0].mean), sim[0].mean !== 0 ? fmtN(100 * (sim[1].mean - sim[0].mean) / Math.abs(sim[0].mean), 1) + "% more" : "");
+  // demand chart: color bars covered by stock
+  const kmax = Math.min(P.cap, Math.ceil(P.mean + 4 * Math.sqrt(P.mean) + 3));
+  const ks = [...Array(kmax + 1).keys()];
+  const colors = ks.map(k => k <= S0 ? css("--c1") : css("--c4"));
+  const o1 = chartBase(); o1.plugins.legend.display = false; o1.scales = { x: axis("Units demanded in a week"), y: axis("Probability", { beginAtZero: true }) };
+  draw("invChart1", { type: "bar", data: { labels: ks, datasets: [{ label: "P(D = d)", data: ks.map(k => pd[k]), backgroundColor: colors, borderRadius: 3, barPercentage: 0.9, categoryPercentage: 0.95 }] }, options: o1 });
+  $("invCap1").innerHTML = `Blue = demand the DP stock of ${S0} covers. Gray = weeks you'd run out (${fmtN(100 * stockout, 1)}% of weeks). Average demand = ${P.mean}.`;
+  const xs = [...Array(Math.min(P.cap, S0 + 6) + 1).keys()];
+  const o2 = chartBase(); o2.scales = { x: axis("Units on hand at start of week"), y: axis("Units to order", { beginAtZero: true }) };
+  draw("invChart2", { type: "line", data: { labels: xs, datasets: [
+    line("Random demand (DP)", xs.map(s => R.S[s] - s), css("--c2"), { stepped: "middle" }),
+    line("Demand known = average", xs.map(s => Rd.S[s] - s), css("--c1"), { stepped: "middle", borderDash: [6, 4] }) ] }, options: o2 });
+  $("invSimTable").innerHTML = `<thead><tr><th>Rule</th><th>Mean yearly profit</th><th>Std dev</th><th>Demand served</th></tr></thead><tbody>
+    <tr><td>Order up to ${Sd} (naive)</td><td>${fmt$(sim[0].mean)}</td><td>${fmt$(sim[0].sd)}</td><td>${fmtN(100 * sim[0].fill, 1)}%</td></tr>
+    <tr><td><b>Order up to ${S0} (DP)</b></td><td><b>${fmt$(sim[1].mean)}</b></td><td>${fmt$(sim[1].sd)}</td><td>${fmtN(100 * sim[1].fill, 1)}%</td></tr></tbody>`;
+  let h = "<thead><tr><th>On hand</th><th>Order (random demand)</th><th>Order (demand = average)</th></tr></thead><tbody>";
+  for (let s = 0; s <= P.cap; s++) h += `<tr><td>${s}</td><td>${R.S[s] - s}</td><td>${Rd.S[s] - s}</td></tr>`;
+  $("invTable").innerHTML = h + "</tbody>";
+  if (rendered.q) showQParams();
+}
+document.querySelectorAll("#inv .inputs input").forEach(el => el.addEventListener("input", debounce(runInv, 350)));
+
+/* ================= Tab 3a: bandit ================= */
+let banditSeed = 7, lastBandit = null;
+function banditParams(){ return { a1: num("b_a1"), yh1: num("b_yh1"), yl1: num("b_yl1"), a2: num("b_a2"), b2: num("b_b2"), yh2: num("b_yh2"), yl2: num("b_yl2"), delta: num("b_delta") }; }
+function runBandit(){
+  const P = banditParams(), warn = [];
+  ["a1", "a2", "b2"].forEach(k => { if (!(P[k] >= 0 && P[k] <= 1)) warn.push("Probabilities must be between 0 and 1."); });
+  if (!(P.delta >= 0 && P.delta < 1)) warn.push("The discount factor must be at least 0 and below 1.");
+  if ([P.yh1, P.yl1, P.yh2, P.yl2].some(v => !isFinite(v))) warn.push("Enter all payoffs.");
+  $("banditWarn").textContent = [...new Set(warn)].join(" ");
+  if (warn.length) return;
+  const R = M.solveBandit(P); lastBandit = { P, R };
+  const fmtB = v => v === null ? "never" : v === 0 ? "always" : "φ > " + v.toFixed(3);
+  $("banditStats").innerHTML =
+    stat("Try new campaign when (optimal)", fmtB(R.switchAt), "Bellman with learning") +
+    stat("Try new campaign when (myopic)", fmtB(R.myopicAt), "this week's payoff only") +
+    stat("Proven campaign earns", fmt$(R.r1, 1) + "/wk", "expected, known") +
+    stat("New campaign earns", fmt$(R.mG, 1) + "/wk", "if good; " + fmt$(R.mB, 1) + "/wk if bad");
+  const step = 20, pts = (arr) => { const o = []; for (let i = 0; i < R.phi.length; i += step) o.push({ x: R.phi[i], y: arr[i] }); return o; };
+  const o1 = chartBase(); o1.scales = { x: axis("Belief φ = P(new campaign is good)", { type: "linear", min: 0, max: 1 }), y: axis("Value per week ($)") };
+  draw("bChart1", { type: "line", data: { datasets: [
+    line("V* optimal", pts(R.V), css("--text")),
+    line("V1: proven", pts(R.V1), css("--c1"), { borderDash: [6, 4], borderWidth: 1.5 }),
+    line("V2: new", pts(R.V2), css("--c2"), { borderDash: [2, 3], borderWidth: 2 }) ] }, options: o1 });
+  const zmax = Math.min(1, Math.max(0.2, (R.myopicAt || 0.1) * 1.8, (R.switchAt || 0) * 1.8));
+  const zpts = arr => { const o = []; for (let i = 0; i < R.phi.length && R.phi[i] <= zmax; i += 2) o.push({ x: R.phi[i], y: arr[i] }); return o; };
+  const zV1 = zpts(R.V1), zV2 = zpts(R.V2), zr2 = zpts(R.r2);
+  const ys = zV1.concat(zV2).map(p => p.y); const rawLo = Math.min(...ys, R.r1), rawHi = Math.max(...ys);
+  const stepY = Math.max(1, Math.pow(10, Math.floor(Math.log10(Math.max(1e-9, rawHi - rawLo)))) / 2);
+  const lo = Math.floor(rawLo / stepY) * stepY - stepY, hi = Math.ceil(rawHi / stepY) * stepY;
+  const vline = (x, label, color) => line(label, [{ x, y: lo }, { x, y: hi }], color, { borderWidth: 1.5 });
+  const zds = [line("V1: proven", zV1, css("--c1"), { borderDash: [6, 4] }), line("V2: new", zV2, css("--c2")),
+    line("new, today's payoff only", zr2, css("--c4"), { borderDash: [8, 3, 2, 3], borderWidth: 1.3 })];
+  if (R.switchAt !== null) zds.push(vline(R.switchAt, "optimal switch " + R.switchAt.toFixed(3), css("--c2")));
+  if (R.myopicAt !== null && R.myopicAt <= zmax) zds.push(vline(R.myopicAt, "myopic switch " + R.myopicAt.toFixed(3), css("--c4")));
+  const o2 = chartBase(); o2.scales = { x: axis("Belief φ", { type: "linear", min: 0, max: zmax }), y: axis("Value per week ($)", { min: lo, max: hi }) };
+  draw("bChart2", { type: "line", data: { datasets: zds }, options: o2 });
+  runBanditPath();
+}
+function runBanditPath(){
+  if (!lastBandit) return;
+  const { P, R } = lastBandit; const phi0 = Math.min(1, Math.max(0, num("b_phi0")));
+  const sim = M.banditPath(P, R.switchAt, phi0, $("b_truth").value, 30, banditSeed);
+  $("bPath").innerHTML = sim.path.map((c, i) => `<div class="chip ${c === "1" ? "one" : c}" title="Week ${i + 1}">${c}</div>`).join("");
+  const o = chartBase(); o.plugins.legend.display = false;
+  o.scales = { x: axis("Week"), y: axis("Belief φ", { min: 0, max: 1 }) };
+  const ptc = sim.beliefs.map((_, i) => i === 0 ? css("--text-2") : sim.path[i - 1] === "S" ? css("--c3") : sim.path[i - 1] === "F" ? css("--c2") : css("--c4"));
+  const ds = [line("Belief", sim.beliefs, css("--c1"), { pointRadius: 3.5, pointBackgroundColor: ptc, pointBorderColor: ptc })];
+  if (R.switchAt !== null) ds.push(line("give-up line", sim.beliefs.map(() => R.switchAt), css("--c4"), { borderDash: [4, 4], borderWidth: 1 }));
+  draw("bChart3", { type: "line", data: { labels: sim.beliefs.map((_, i) => i), datasets: ds }, options: o });
+}
+document.querySelectorAll("#bandit .inputs input").forEach(el => el.addEventListener("input", debounce(el.id === "b_phi0" ? runBanditPath : runBandit)));
+$("b_truth").addEventListener("change", runBanditPath);
+$("b_rerun").addEventListener("click", () => { banditSeed += 1; runBanditPath(); });
+
+/* ================= Tab 3b: Q-learning ================= */
+function showQParams(){
+  const P = invParams();
+  $("qParams").innerHTML = `Using the Inventory tab's numbers: price ${fmt$(P.price, 2)}, cost ${fmt$(P.cost, 2)}, holding ${fmt$(P.hold, 2)}, demand Poisson(${P.mean}), shelf ${P.cap}, δ = ${P.delta}. The learner is never told the demand distribution.`;
+}
+let qBusy = false;
+$("q_run").addEventListener("click", () => {
+  if (qBusy) return;
+  const P = invParams(), w = invCheck(P);
+  if (w.length){ $("qStats").innerHTML = stat("Fix the Inventory tab first", "", w.join(" ")); return; }
+  const opts = { steps: parseInt($("q_steps").value, 10), eps: Math.min(1, Math.max(0, num("q_eps"))), expo: Math.min(1, Math.max(0.51, num("q_expo"))), seed: Math.max(0, Math.round(num("q_seed")) || 0) };
+  const st = M.qInit(P, opts); qBusy = true; $("q_run").disabled = true; $("q_run").textContent = "Learning…";
+  $("qStats").innerHTML = stat("Status", "Learning…", "0 weeks");
+  const chunk = 50000;
+  function tick(){
+    const done = M.qRun(st, chunk);
+    $("qProg").style.width = (100 * st.step / opts.steps) + "%";
+    $("qStats").innerHTML = stat("Status", "Learning…", fmtN(st.step) + " of " + fmtN(opts.steps) + " weeks");
+    if (!done) { setTimeout(tick, 0); return; }
+    finishQ(P, st);
+  }
+  setTimeout(tick, 20);
+});
+function finishQ(P, st){
+  qBusy = false; $("q_run").disabled = false; $("q_run").textContent = "Run Q-learning";
+  const learned = M.qPolicy(st);
+  const pd = M.poissonPmf(P.mean, P.cap), R = M.solveInventory(P, pd);
+  const sim = M.simulateInventory(P, [s => learned[s], s => R.S[s]], 5000, 1);
+  const totV = st.stateVisits.reduce((a, b) => a + b, 0);
+  $("qStats").innerHTML =
+    stat("Learned: order up to (0 on hand)", learned[0], "DP says " + R.S[0]) +
+    stat("Q-learning rule profit", fmt$(sim[0].mean) + "/yr", "5,000 test years, no exploring") +
+    stat("DP rule profit", fmt$(sim[1].mean) + "/yr", "knows the demand distribution") +
+    stat("Gap", fmt$(sim[1].mean - sim[0].mean) + "/yr", fmtN(st.opts.steps) + " weeks of experience");
+  const o = chartBase(); o.scales = { x: axis("Weeks of experience (log scale)", { type: "logarithmic", ticks: { color: css("--muted"), font: { size: 10 }, autoSkip: false, maxRotation: 0, callback: v => { const l = Math.log10(v); return Math.abs(l - Math.round(l)) < 1e-9 ? Number(v).toLocaleString("en-US") : ""; } } }), y: axis("$ per week (block average)") };
+  const opt = sim[1].mean / 52, xs = st.curve.map(p => p[0]);
+  draw("qChart1", { type: "line", data: { datasets: [
+    line("Q-learner (incl. exploring)", st.curve.map(p => ({ x: p[0], y: p[1] })), css("--c1"), { borderWidth: 1.3 }),
+    line("DP optimum", [{ x: xs[0], y: opt }, { x: xs[xs.length - 1], y: opt }], css("--c2"), { borderDash: [6, 4] }) ] }, options: o });
+  let h = "<thead><tr><th>On hand</th><th>Q-learning order</th><th>DP order</th><th>% of weeks here</th></tr></thead><tbody>";
+  for (let s = 0; s <= P.cap; s++){
+    const pct = 100 * st.stateVisits[s] / totV; const same = learned[s] === R.S[s];
+    h += `<tr><td>${s}</td><td style="color:${same ? "inherit" : css("--c2")}">${learned[s] - s}</td><td>${R.S[s] - s}</td><td>${pct < 0.05 ? "&lt;0.1" : fmtN(pct, 1)}%</td></tr>`;
+  }
+  $("qTable").innerHTML = h + "</tbody>";
+}
+
+/* ---- start ---- */
+window.addEventListener("load", () => {
+  if (window.renderMathInElement) renderMathInElement(document.body, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "\\(", right: "\\)", display: false }], throwOnError: false });
+  const start = (location.hash || "").slice(1);
+  showTab(["overview", "feed", "inv", "bandit", "q"].includes(start) ? start : "overview");
+});
+</script>
+</body>
+</html>
